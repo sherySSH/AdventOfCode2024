@@ -19,12 +19,7 @@ def parse_muls(content : str):
         sum += int(factor[0]) * int(factor[1])
 
     return sum
-# . mul... do
-# . mul... dont
-# do mul... do
-# do mul... dont
-# dont mul... do
-# dont mul... dont
+
 
 def parse_conditional_muls(content : str):
     do_regex = re.compile("(do\(\))")
@@ -32,24 +27,36 @@ def parse_conditional_muls(content : str):
     mul_regex = re.compile("mul\(\d{1,3},\d{1,3}\)")
 
     
-    mul_list = do_regex.finditer(content)
-    print(list(mul_list))
-
-    mul_list = dont_regex.finditer(content)
-    print(list(mul_list))
-
-    mul_list = mul_regex.finditer(content)
-    print(list(mul_list))
-
-    mul_list = [mul[1] for mul in mul_list]
-    factors = []
-    for mul in mul_list:
-        mul = mul.replace("mul(","").replace(")","")
-        factors.append(tuple(mul.split(",")))
+    do_iter = do_regex.finditer(content)
+    dont_iter = dont_regex.finditer(content)
+    mul_iter = mul_regex.finditer(content)
+    print(list(dont_iter))
+    valid_range_list = []
+    for do in list(do_iter):
+        do_span = do.span()
+        for dont in list(dont_iter):
+            dont_span = dont.span()
+            if do_span[1] < dont_span[0]:
+                valid_range_list.append((do_span[1] , dont_span[0]))
+                break
     
     sum = 0
-    for factor in factors:
-        sum += int(factor[0]) * int(factor[1])
+    print(valid_range_list)
+    for valid_range in valid_range_list:
+        for mul in list(mul_iter):
+            mul_span = mul.span()
+            if valid_range[0] < mul_span[0] and valid_range[1] > mul_span[1]:
+                print(mul)
+
+    # mul_list = [mul[1] for mul in mul_list]
+    # factors = []
+    # for mul in mul_list:
+    #     mul = mul.replace("mul(","").replace(")","")
+    #     factors.append(tuple(mul.split(",")))
+    
+    # sum = 0
+    # for factor in factors:
+    #     sum += int(factor[0]) * int(factor[1])
 
     return sum
 
