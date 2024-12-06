@@ -1,1 +1,1 @@
-
+This repo contains the code for solving the Advent of Code 2024 programming challenges, organized in the form folders where each folder correspond to AoC day. Inside day folder, there will be main.py file that can be run to find solution for all parts of the problem.
