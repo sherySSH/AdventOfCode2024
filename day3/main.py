@@ -27,36 +27,33 @@ def parse_conditional_muls(content : str):
     mul_regex = re.compile("mul\(\d{1,3},\d{1,3}\)")
 
     
-    do_iter = do_regex.finditer(content)
-    dont_iter = dont_regex.finditer(content)
-    mul_iter = mul_regex.finditer(content)
-    print(list(dont_iter))
+    do_list = list(do_regex.finditer(content))
+    dont_list = list(dont_regex.finditer(content))
+    mul_list = list(mul_regex.finditer(content))
+    
+    print(do_list)
+    print(dont_list)
+
     valid_range_list = []
-    for do in list(do_iter):
+    for do in list(do_list):
         do_span = do.span()
-        for dont in list(dont_iter):
+        for dont in list(dont_list):
             dont_span = dont.span()
-            if do_span[1] < dont_span[0]:
+            if do_span[1] < dont_span[0] and len(valid_range_list) == 0:
                 valid_range_list.append((do_span[1] , dont_span[0]))
-                break
+            # condition for creating non-overlapping do-dont segments
+            elif do_span[1] < dont_span[0] and do_span[0] > valid_range_list[-1][1]:
+                valid_range_list.append((do_span[1] , dont_span[0]))
     
     sum = 0
     print(valid_range_list)
     for valid_range in valid_range_list:
-        for mul in list(mul_iter):
+        for mul in mul_list:
             mul_span = mul.span()
             if valid_range[0] < mul_span[0] and valid_range[1] > mul_span[1]:
-                print(mul)
-
-    # mul_list = [mul[1] for mul in mul_list]
-    # factors = []
-    # for mul in mul_list:
-    #     mul = mul.replace("mul(","").replace(")","")
-    #     factors.append(tuple(mul.split(",")))
-    
-    # sum = 0
-    # for factor in factors:
-    #     sum += int(factor[0]) * int(factor[1])
+                mul = mul.group().replace("mul(","").replace(")","")
+                factors = mul.split(",")
+                sum += int(factors[0]) * int(factors[1])
 
     return sum
 
