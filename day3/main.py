@@ -22,11 +22,10 @@ def parse_muls(content : str):
 
 
 def parse_conditional_muls(content : str):
-    do_regex = re.compile("(do\(\))")
-    dont_regex = re.compile("(don't\(\))")
+    do_regex = re.compile("do\(\)")
+    dont_regex = re.compile("don't\(\)")
     mul_regex = re.compile("mul\(\d{1,3},\d{1,3}\)")
 
-    
     do_list = list(do_regex.finditer(content))
     dont_list = list(dont_regex.finditer(content))
     mul_list = list(mul_regex.finditer(content))
@@ -35,9 +34,9 @@ def parse_conditional_muls(content : str):
     print(dont_list)
 
     valid_range_list = []
-    for do in list(do_list):
+    for do in do_list:
         do_span = do.span()
-        for dont in list(dont_list):
+        for dont in dont_list:
             dont_span = dont.span()
             if do_span[1] < dont_span[0] and len(valid_range_list) == 0:
                 valid_range_list.append((do_span[1] , dont_span[0]))
@@ -50,7 +49,7 @@ def parse_conditional_muls(content : str):
     for valid_range in valid_range_list:
         for mul in mul_list:
             mul_span = mul.span()
-            if valid_range[0] < mul_span[0] and valid_range[1] > mul_span[1]:
+            if (valid_range[0] < mul_span[0]) and (valid_range[1] > mul_span[1]):
                 mul = mul.group().replace("mul(","").replace(")","")
                 factors = mul.split(",")
                 sum += int(factors[0]) * int(factors[1])
