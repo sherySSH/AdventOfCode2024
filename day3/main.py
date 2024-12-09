@@ -49,7 +49,7 @@ def parse_conditional_muls(content : str):
         elif group == 'don\'t()':
             enabled_muls = []
         else:
-            # if we do not encounter do()/dont'() then we must have gotten mul obviously, there are just 3 choices after matching regex
+            # if we do not encounter do()/don't() then we must have gotten mul obviously, there are just 3 choices after matching regex
             enabled_muls.append(group)
 
     return sum
