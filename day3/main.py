@@ -7,13 +7,18 @@ def read_file(fpath : str) -> str:
     return content
 
 def parse_muls(content : str):
+    #find all muls
     regex = re.compile("mul\(\d{1,3},\d{1,3}\)")
     mul_list = regex.findall(content)
+    
     factors = []
     for mul in mul_list:
+        # do some string processing and extract numbers
         mul = mul.replace("mul(","").replace(")","")
+        # type case number from str to int
         factors.append(tuple(mul.split(",")))
     
+    # product-sum
     sum = 0
     for factor in factors:
         sum += int(factor[0]) * int(factor[1])
@@ -22,37 +27,30 @@ def parse_muls(content : str):
 
 
 def parse_conditional_muls(content : str):
-    do_regex = re.compile("do\(\)")
-    dont_regex = re.compile("don't\(\)")
-    mul_regex = re.compile("mul\(\d{1,3},\d{1,3}\)")
 
-    do_list = list(do_regex.finditer(content))
-    dont_list = list(dont_regex.finditer(content))
-    mul_list = list(mul_regex.finditer(content))
-    
-    print(do_list)
-    print(dont_list)
+    # match do() or match mul(ddd,ddd) or match don't()
+    all_regex = re.compile("(do\(\))|(mul\(\d{1,3},\d{1,3}\))|(don't\(\))")
+    all_list = list(all_regex.finditer(content))
 
-    valid_range_list = []
-    for do in do_list:
-        do_span = do.span()
-        for dont in dont_list:
-            dont_span = dont.span()
-            if do_span[1] < dont_span[0] and len(valid_range_list) == 0:
-                valid_range_list.append((do_span[1] , dont_span[0]))
-            # condition for creating non-overlapping do-dont segments
-            elif do_span[1] < dont_span[0] and do_span[0] > valid_range_list[-1][1]:
-                valid_range_list.append((do_span[1] , dont_span[0]))
     
+    enabled_muls = []
     sum = 0
-    print(valid_range_list)
-    for valid_range in valid_range_list:
-        for mul in mul_list:
-            mul_span = mul.span()
-            if (valid_range[0] < mul_span[0]) and (valid_range[1] > mul_span[1]):
-                mul = mul.group().replace("mul(","").replace(")","")
+    # reverse traversal of matched elements
+    for element in reversed(all_list):
+        group = element.group()
+        # if while reverse traversal we encounter do() instruction then we immediately product-sum muls that we have found so far
+        if group == 'do()':
+            for enabled_mul in enabled_muls:
+                mul = enabled_mul.replace("mul(","").replace(")","")
                 factors = mul.split(",")
                 sum += int(factors[0]) * int(factors[1])
+            enabled_muls = []
+        # if we encounter don't() then we simply drop the muls that we encountered so far
+        elif group == 'don\'t()':
+            enabled_muls = []
+        else:
+            # if we do not encounter do()/dont'() then we must have gotten mul obviously, there are just 3 choices after matching regex
+            enabled_muls.append(group)
 
     return sum
 
