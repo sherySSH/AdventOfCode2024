@@ -142,6 +142,9 @@ def search_bottom_left(grid : list, position : tuple, expected_word : str, searc
     else:
         return 0
 
+def grid_search():
+    pass
+
 if __name__ == "__main__":
 
     grid = read_file("input.txt")
