@@ -56,8 +56,13 @@ def parse_conditional_muls(content : str):
 
 if __name__ == "__main__":
     content = read_file("input.txt")
+    
+    # part a
+    
     sum = parse_muls(content)
     print("Part a", sum)
+
+    #part b
 
     content = "do()"+content
     sum = parse_conditional_muls(content)
