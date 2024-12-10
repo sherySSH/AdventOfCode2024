@@ -74,7 +74,72 @@ def search_bottom(grid : list, position : tuple, expected_word : str, searched_w
     else:
         return 0
 
+def search_top_right(grid : list, position : tuple, expected_word : str, searched_word : str):
 
+    searched_letter = grid[position.y][position.x]
+    expected_letter = expected_word[len(searched_word)]
+    searched_word = searched_word + searched_letter
+
+    position.x = position.x + 1
+    position.y = position.y - 1
+
+    if searched_letter == expected_letter and expected_word == searched_word:
+        return 1
+    elif searched_letter == expected_letter and expected_word != searched_word:
+        return search_top_right(grid, position, expected_word, searched_word)
+    else:
+        return 0
+    
+
+def search_top_left(grid : list, position : tuple, expected_word : str, searched_word : str):
+
+    searched_letter = grid[position.y][position.x]
+    expected_letter = expected_word[len(searched_word)]
+    searched_word = searched_word + searched_letter
+
+    position.x = position.x - 1
+    position.y = position.y - 1
+
+    if searched_letter == expected_letter and expected_word == searched_word:
+        return 1
+    elif searched_letter == expected_letter and expected_word != searched_word:
+        return search_top_left(grid, position, expected_word, searched_word)
+    else:
+        return 0
+    
+
+def search_bottom_right(grid : list, position : tuple, expected_word : str, searched_word : str):
+
+    searched_letter = grid[position.y][position.x]
+    expected_letter = expected_word[len(searched_word)]
+    searched_word = searched_word + searched_letter
+
+    position.x = position.x + 1
+    position.y = position.y + 1
+
+    if searched_letter == expected_letter and expected_word == searched_word:
+        return 1
+    elif searched_letter == expected_letter and expected_word != searched_word:
+        return search_bottom_right(grid, position, expected_word, searched_word)
+    else:
+        return 0
+    
+
+def search_bottom_left(grid : list, position : tuple, expected_word : str, searched_word : str):
+
+    searched_letter = grid[position.y][position.x]
+    expected_letter = expected_word[len(searched_word)]
+    searched_word = searched_word + searched_letter
+
+    position.x = position.x - 1
+    position.y = position.y + 1
+
+    if searched_letter == expected_letter and expected_word == searched_word:
+        return 1
+    elif searched_letter == expected_letter and expected_word != searched_word:
+        return search_bottom_left(grid, position, expected_word, searched_word)
+    else:
+        return 0
 
 
 
