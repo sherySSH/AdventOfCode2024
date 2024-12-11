@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+# This program utilizes the Depth-First-Search approach for solving the Part A 
+
+
 @dataclass
 class Position:
     x : int
