@@ -129,6 +129,7 @@ def search_left(grid, guard_position : Position):
                         location_count = location_count, 
                         direction = PositionDeltaTable.table[Direction.top]
                         )
+    
     elif next_position.y >= len(grid) and next_position.x >= len(grid[next_position.y]):
         return Location(
                         location_count = location_count, 
