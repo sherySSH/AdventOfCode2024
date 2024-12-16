@@ -24,6 +24,11 @@ class PositionDeltaTable():
         Direction.bottom : Direction.left
     }
 
+@dataclass
+class Location():
+    location_count : int
+    direction : Direction | None
+
 def read_file(path : str):
     with open(path, 'r') as f:
         content = f.read()
@@ -68,9 +73,16 @@ def search_top(grid, guard_position : Position, location_count = 0):
     next_position = Position(x=guard_position.x, y=guard_position.y - 1)
 
     if grid[next_position.y][next_position.x] == Blocker.block:
-        return location_count
+        return Location(
+                        location_count = location_count, 
+                        direction = PositionDeltaTable.table[Direction.top]
+                        )
+    
     elif next_position.y >= len(grid) and next_position.x >= len(grid[next_position.y]):
-        return location_count
+        return Location(
+                        location_count = location_count, 
+                        direction = None
+                        )
     else:
         location_count = location_count + 1
         return search_top(grid, next_position, location_count)
@@ -79,9 +91,15 @@ def search_right(grid, guard_position : Position):
     next_position = Position(x=guard_position.x + 1, y=guard_position.y)
 
     if grid[next_position.y][next_position.x] == Blocker.block:
-        return location_count
+        return Location(
+                        location_count = location_count, 
+                        direction = PositionDeltaTable.table[Direction.top]
+                        )
     elif next_position.y >= len(grid) and next_position.x >= len(grid[next_position.y]):
-        return location_count
+        return Location(
+                        location_count = location_count, 
+                        direction = None
+                        )
     else:
         location_count = location_count + 1
         return search_top(grid, next_position, location_count)
@@ -90,9 +108,15 @@ def search_bottom(grid, guard_position : Position):
     next_position = Position(x=guard_position.x, y=guard_position.y + 1)
 
     if grid[next_position.y][next_position.x] == Blocker.block:
-        return location_count
+        return Location(
+                        location_count = location_count, 
+                        direction = PositionDeltaTable.table[Direction.top]
+                        )
     elif next_position.y >= len(grid) and next_position.x >= len(grid[next_position.y]):
-        return location_count
+        return Location(
+                        location_count = location_count, 
+                        direction = None
+                        )
     else:
         location_count = location_count + 1
         return search_top(grid, next_position, location_count)
@@ -101,9 +125,15 @@ def search_left(grid, guard_position : Position):
     next_position = Position(x=guard_position.x - 1, y=guard_position.y)
 
     if grid[next_position.y][next_position.x] == Blocker.block:
-        return location_count
+        return Location(
+                        location_count = location_count, 
+                        direction = PositionDeltaTable.table[Direction.top]
+                        )
     elif next_position.y >= len(grid) and next_position.x >= len(grid[next_position.y]):
-        return location_count
+        return Location(
+                        location_count = location_count, 
+                        direction = None
+                        )
     else:
         location_count = location_count + 1
         return search_top(grid, next_position, location_count)
