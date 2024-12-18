@@ -1,6 +1,7 @@
 from enum import Enum
 from dataclasses import dataclass, field
-from typing import Union
+from typing import Union, List
+from copy import deepcopy
 
 class Direction(str, Enum):
     top = '^'
@@ -35,6 +36,13 @@ class Location():
     position : Position
     position_history : list
     direction : Union[Direction, None]
+
+
+@dataclass
+class Node:
+    position : Position
+    edge_vists : int
+
 
 def read_file(path : str):
     with open(path, 'r') as f:
@@ -217,13 +225,140 @@ def get_distint_positions(position_list : list):
 
     return distinct_positions
 
+
+def create_graph(grid):
+    graph = {}
+    for y in range(len(grid)):
+        for x in range(len(grid[y])):
+            position = Position(x=x,y=y)
+            # add node in the graph if not already present
+            if (x,y) not in graph and grid[y][x] != Blocker.block:
+                graph[(x,y)] = []
+            else:
+                continue
+            
+            # add top node if it exists
+            if (y-1) >=0 and grid[y-1][x] != Blocker.block:
+                graph[(x,y)].append(Node(position=Position(x=position.x, y=position.y-1) ,edge_vists=0))
+            # add right node if it exists
+            if (x+1) < len(grid[y]) and grid[y][x+1] != Blocker.block:
+                graph[(x,y)].append(Node(position=Position(x=position.x+1, y=position.y), edge_vists=0))
+            # add bottom node if it exists
+            if (y+1) < len(grid) and grid[y+1][x] != Blocker.block:
+                graph[(x,y)].append(Node(position=Position(x=position.x , y=position.y+1), edge_vists=0))
+            # add left node if it exists
+            if (x-1) >=0 and grid[y][x-1] != Blocker.block:
+                graph[(x,y)].append(Node(position=Position(x=position.x-1, y=position.y), edge_vists=0))
+    return graph
+
+def update_graph(graph, node_i_pos : Position, node_j_pos : Position):
+    # since graph is not directed therefore we can traverse in any direction
+    # hence we need to update edge count from the perspective of both nodes
+    # even if we traverse from just 1 direction
+    nodes : List[Node] = graph[node_i_pos.y][node_i_pos.x]
+    for node in nodes:
+        if node_i_pos == node.position:
+            node.edge_vists += 1
+
+    nodes : List[Node] = graph[node_j_pos.y][node_j_pos.x]
+    for node in nodes:
+        if node_j_pos == node.position:
+            node.edge_vists += 1
+
+    return graph
+
+def detect_cycle(graph, prev_position, current_position, next_position):
+    
+    # get edge count between previous node and current node
+    neighbours : List[Node] = graph[prev_position.y][prev_position.x]
+    for neighbour in neighbours:
+        if neighbour.position == current_position:
+            edge_i_count = neighbour.edge_vists
+            break
+
+    # get edge count between current node and next node
+    neighbours : List[Node] = graph[current_position.y][current_position.x]
+    for neighbour in neighbours:
+        if neighbour.position == next_position:
+            edge_j_count = neighbour.edge_vists
+            break
+
+    if edge_i_count == edge_j_count:
+        return True
+    else:
+        return False
+    
+
+def place_obstruction(grid : list, position : Position):
+    grid[position.y][position.x] = 'O'
+    return grid
+
+
+def search_grid_with_cycle_detection(graph : dict, grid : list, position_list : list, location_count = 1):
+    orientation = get_guard_orientation(grid)
+    position = get_position(orientation)
+    direction = get_direction(orientation)
+ 
+    if direction == Direction.top:
+        location : Location = search_top(grid, position, position_list, location_count)
+
+    elif direction == Direction.right:
+        location : Location = search_right(grid, position, position_list, location_count)
+    
+    elif direction == Direction.bottom:
+        location : Location = search_bottom(grid, position, position_list, location_count)
+    
+    elif direction == Direction.left:
+        location : Location = search_left(grid, position, position_list, location_count)
+
+    # update direction
+    direction = location.direction
+    # update total location count including overlapping
+    location_count = location.location_count
+    # get updated position
+    updated_position = location.position
+    # update position history that was travelled by guard
+    position_list = location.position_history
+
+    # update the edge visit counts that are traversed during search
+    prev_position = position
+    current_position = position
+    for next_position in position_list:
+        if prev_position != current_position:
+            has_cycle = detect_cycle(graph, prev_position, current_position, next_position)
+            if has_cycle:
+                return True
+            
+            graph = update_graph(graph, current_position, next_position)
+            prev_position = current_position
+            current_position = next_position
+        else:
+            graph = update_graph(graph, current_position, next_position)
+            current_position = next_position
+
+    # base case that triggers when guard left the patrol area
+    if direction == None:
+        return False
+    # otherwise keep searching for distinct location
+    else:
+        # update grid
+        grid[position.y][position.x] = '.'
+        grid[updated_position.y][updated_position.x] = direction.value
+        # print(position_list)
+        return search_grid_with_cycle_detection(graph, grid, position_list, location_count=location_count)
+    
+
 if __name__ == "__main__":
     content = read_file("input.txt")
     grid = processing(content)
     position_list = search_grid(
-                                grid, 
+                                deepcopy(grid), 
                                 position_list=[get_position(get_guard_orientation(grid))] , 
                                 location_count=1
                                 )
     
     print("Part a: ", len(get_distint_positions(position_list)) )
+    graph = create_graph(grid)
+    orientation = get_guard_orientation(grid)
+    initial_position = get_position(orientation)
+    graph.pop((initial_position.x, initial_position.y))
