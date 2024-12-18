@@ -180,6 +180,12 @@ def search_left(grid, guard_position : Position, positions : list , location_cou
 
 
 def search_grid(grid, position_list : list, location_count = 1):
+    """
+    Parameters:
+
+    position_list : This is the position history of guard that we will keep updating as we traverse our grid/graph
+    
+    """
     orientation = get_guard_orientation(grid)
     position = get_position(orientation)
     direction = get_direction(orientation)
@@ -267,7 +273,7 @@ def update_graph(graph, node_i_pos : Position, node_j_pos : Position):
 
     return graph
 
-def detect_cycle(graph, prev_position, current_position, next_position):
+def detect_infinite_cycle(graph, prev_position, current_position, next_position):
     
     # get edge count between previous node and current node
     neighbours : List[Node] = graph[prev_position.y][prev_position.x]
@@ -294,7 +300,7 @@ def place_obstruction(grid : list, position : Position):
     return grid
 
 
-def search_grid_with_cycle_detection(graph : dict, grid : list, position_list : list, location_count = 1):
+def search_grid_with_cycle_detection(graph : dict, grid : list, position_list : list, location_count = 1, prev_position=None):
     orientation = get_guard_orientation(grid)
     position = get_position(orientation)
     direction = get_direction(orientation)
@@ -321,20 +327,19 @@ def search_grid_with_cycle_detection(graph : dict, grid : list, position_list : 
     position_list = location.position_history
 
     # update the edge visit counts that are traversed during search
-    prev_position = position
     current_position = position
     for next_position in position_list:
-        if prev_position != current_position:
-            has_cycle = detect_cycle(graph, prev_position, current_position, next_position)
+        if prev_position == None:
+            graph = update_graph(graph, current_position, next_position)
+
+        else:
+            has_cycle = detect_infinite_cycle(graph, prev_position, current_position, next_position)
             if has_cycle:
                 return True
             
             graph = update_graph(graph, current_position, next_position)
-            prev_position = current_position
-            current_position = next_position
-        else:
-            graph = update_graph(graph, current_position, next_position)
-            current_position = next_position
+        prev_position = current_position
+        current_position = next_position
 
     # base case that triggers when guard left the patrol area
     if direction == None:
@@ -345,8 +350,17 @@ def search_grid_with_cycle_detection(graph : dict, grid : list, position_list : 
         grid[position.y][position.x] = '.'
         grid[updated_position.y][updated_position.x] = direction.value
         # print(position_list)
-        return search_grid_with_cycle_detection(graph, grid, position_list, location_count=location_count)
+        return search_grid_with_cycle_detection(graph, grid, position_list, location_count=location_count, prev_position=prev_position)
     
+
+def count_inifinite_cycles_after_obstruction():
+    # place obstructions
+
+    # detect cycle
+
+    # count cycle
+
+    pass
 
 if __name__ == "__main__":
     content = read_file("input.txt")
@@ -362,3 +376,10 @@ if __name__ == "__main__":
     orientation = get_guard_orientation(grid)
     initial_position = get_position(orientation)
     graph.pop((initial_position.x, initial_position.y))
+    search_grid_with_cycle_detection(
+                                    graph, 
+                                    deepcopy(grid), 
+                                    position_list=[get_position(get_guard_orientation(grid))] ,
+                                    location_count=1,
+                                    prev_position=None 
+                                    )
