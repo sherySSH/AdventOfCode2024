@@ -340,16 +340,18 @@ def search_grid_with_cycle_detection(graph : dict, grid : list, position_list : 
     position_list = location.position_history
     # update the edge visit counts that are traversed during search
     current_position = position
-    for next_position in position_list:
+    for i in range(len(position_list)):
+        current_position = position_list[i]
+        if (i+1) < len(position_list):
+            next_position = position_list[i+1]
+        
         if prev_position != None and prev_position != current_position:
             graph = update_graph(graph, current_position, next_position)
-
             has_cycle = detect_infinite_cycle(graph, prev_position, current_position, next_position)
             if has_cycle:
                 return True
-            
+
         prev_position = current_position
-        current_position = next_position
 
     # base case that triggers when guard left the patrol area
     if direction == None:
@@ -370,14 +372,14 @@ def count_inifinite_cycles_after_obstruction(grid : list, positions : list):
     # remove the starting position of guard from traversed position list
     guard_starting_pos = positions[0]
     obst_positions = remove_guard_starting_location(guard_starting_pos, positions)
-
+    i=0
     for obst_pos in obst_positions:
 
         grid_copy = deepcopy(grid)
         grid_copy = place_obstruction(grid_copy, obst_pos)
         graph = create_graph(grid_copy)
 
-    # detect cycle
+        # detect cycle
         contains_cycle : bool = search_grid_with_cycle_detection(
                                     graph, 
                                     grid_copy, 
@@ -385,11 +387,11 @@ def count_inifinite_cycles_after_obstruction(grid : list, positions : list):
                                     location_count=1,
                                     prev_position=None 
                                     )
-        print(contains_cycle)
-    # count cycle
+        # count cycle
         if contains_cycle:
             cycle_count += 1
-
+        i += 1
+        print(i, obst_pos, cycle_count)
     return cycle_count
 
 if __name__ == "__main__":
