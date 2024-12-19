@@ -11,6 +11,7 @@ class Direction(str, Enum):
 
 class Blocker(str, Enum):
     block = '#'
+    obstruction = 'O'
 
 @dataclass
 class Position():
@@ -75,11 +76,11 @@ def get_guard_orientation(grid : list):
                 return (position, Direction.bottom)
             
 
-def get_position(orientation : tuple):
+def get_position(orientation : tuple) -> Position:
     position = orientation[0]
     return position
 
-def get_direction(orientation : tuple):
+def get_direction(orientation : tuple) -> Direction:
     direction = orientation[1]
     return direction
 
@@ -95,7 +96,7 @@ def search_top(grid, guard_position : Position, positions : list, location_count
                         direction = None
                         )
 
-    elif grid[next_position.y][next_position.x] == Blocker.block:
+    elif grid[next_position.y][next_position.x] == Blocker.block or grid[next_position.y][next_position.x] == Blocker.obstruction:
         return Location(
                         location_count = location_count, 
                         position=guard_position,
@@ -118,7 +119,7 @@ def search_right(grid, guard_position : Position, positions : list, location_cou
                         direction = None
                         )
 
-    elif grid[next_position.y][next_position.x] == Blocker.block:
+    elif grid[next_position.y][next_position.x] == Blocker.block or grid[next_position.y][next_position.x] == Blocker.obstruction:
         return Location(
                         location_count = location_count,
                         position=guard_position,
@@ -141,7 +142,7 @@ def search_bottom(grid, guard_position : Position, positions : list, location_co
                         direction = None
                         )
 
-    elif grid[next_position.y][next_position.x] == Blocker.block:
+    elif grid[next_position.y][next_position.x] == Blocker.block or grid[next_position.y][next_position.x] == Blocker.obstruction:
         return Location(
                         location_count = location_count,
                         position=guard_position,
@@ -165,7 +166,7 @@ def search_left(grid, guard_position : Position, positions : list , location_cou
                         direction = None
                         )
     
-    elif grid[next_position.y][next_position.x] == Blocker.block:
+    elif grid[next_position.y][next_position.x] == Blocker.block or grid[next_position.y][next_position.x] == Blocker.obstruction:
         return Location(
                         location_count = location_count,
                         position=guard_position,
@@ -191,16 +192,16 @@ def search_grid(grid, position_list : list, location_count = 1):
     direction = get_direction(orientation)
  
     if direction == Direction.top:
-        location : Location = search_top(grid, position, position_list, location_count)
+        location : Location = search_top(grid, position, [], location_count)
 
     elif direction == Direction.right:
-        location : Location = search_right(grid, position, position_list, location_count)
+        location : Location = search_right(grid, position, [], location_count)
     
     elif direction == Direction.bottom:
-        location : Location = search_bottom(grid, position, position_list, location_count)
+        location : Location = search_bottom(grid, position, [], location_count)
     
     elif direction == Direction.left:
-        location : Location = search_left(grid, position, position_list, location_count)
+        location : Location = search_left(grid, position, [], location_count)
 
     # update direction
     direction = location.direction
@@ -209,7 +210,7 @@ def search_grid(grid, position_list : list, location_count = 1):
     # get updated position
     updated_position = location.position
     # update position history that was travelled by guard
-    position_list = location.position_history
+    position_list.extend(location.position_history)
     
     # base case that triggers when guard left the patrol area
     if direction == None:
@@ -231,6 +232,12 @@ def get_distint_positions(position_list : list):
 
     return distinct_positions
 
+def remove_guard_starting_location(starting_pos : Position, positions : List[Position]):
+    prep_poisitions = []
+    for position in positions:
+        if position != starting_pos:
+            prep_poisitions.append(position)
+    return prep_poisitions
 
 def create_graph(grid):
     graph = {}
@@ -240,6 +247,7 @@ def create_graph(grid):
             # add node in the graph if not already present
             if (x,y) not in graph and grid[y][x] != Blocker.block:
                 graph[(x,y)] = []
+            # if given node is blocker then no need to add it in the graph
             else:
                 continue
             
@@ -261,14 +269,16 @@ def update_graph(graph, node_i_pos : Position, node_j_pos : Position):
     # since graph is not directed therefore we can traverse in any direction
     # hence we need to update edge count from the perspective of both nodes
     # even if we traverse from just 1 direction
-    nodes : List[Node] = graph[node_i_pos.y][node_i_pos.x]
-    for node in nodes:
-        if node_i_pos == node.position:
-            node.edge_vists += 1
-
-    nodes : List[Node] = graph[node_j_pos.y][node_j_pos.x]
+    nodes : List[Node] = graph[(node_i_pos.x,node_i_pos.y)]
+    # BFS to find the node_j neighbour
     for node in nodes:
         if node_j_pos == node.position:
+            node.edge_vists += 1
+
+    nodes : List[Node] = graph[(node_j_pos.x,node_j_pos.y)]
+    # BFS to find the node_i neighbour
+    for node in nodes:
+        if node_i_pos == node.position:
             node.edge_vists += 1
 
     return graph
@@ -276,14 +286,15 @@ def update_graph(graph, node_i_pos : Position, node_j_pos : Position):
 def detect_infinite_cycle(graph, prev_position, current_position, next_position):
     
     # get edge count between previous node and current node
-    neighbours : List[Node] = graph[prev_position.y][prev_position.x]
+    neighbours : List[Node] = graph[(prev_position.x,prev_position.y)]
+
     for neighbour in neighbours:
         if neighbour.position == current_position:
             edge_i_count = neighbour.edge_vists
             break
 
     # get edge count between current node and next node
-    neighbours : List[Node] = graph[current_position.y][current_position.x]
+    neighbours : List[Node] = graph[(current_position.x,current_position.y)]
     for neighbour in neighbours:
         if neighbour.position == next_position:
             edge_j_count = neighbour.edge_vists
@@ -304,40 +315,39 @@ def search_grid_with_cycle_detection(graph : dict, grid : list, position_list : 
     orientation = get_guard_orientation(grid)
     position = get_position(orientation)
     direction = get_direction(orientation)
+
  
     if direction == Direction.top:
-        location : Location = search_top(grid, position, position_list, location_count)
+        location : Location = search_top(grid, position, [], location_count)
 
     elif direction == Direction.right:
-        location : Location = search_right(grid, position, position_list, location_count)
+        location : Location = search_right(grid, position, [], location_count)
     
     elif direction == Direction.bottom:
-        location : Location = search_bottom(grid, position, position_list, location_count)
+        location : Location = search_bottom(grid, position, [], location_count)
     
     elif direction == Direction.left:
-        location : Location = search_left(grid, position, position_list, location_count)
+        location : Location = search_left(grid, position, [], location_count)
 
     # update direction
     direction = location.direction
+    
     # update total location count including overlapping
     location_count = location.location_count
     # get updated position
     updated_position = location.position
     # update position history that was travelled by guard
     position_list = location.position_history
-
     # update the edge visit counts that are traversed during search
     current_position = position
     for next_position in position_list:
-        if prev_position == None:
+        if prev_position != None and prev_position != current_position:
             graph = update_graph(graph, current_position, next_position)
 
-        else:
             has_cycle = detect_infinite_cycle(graph, prev_position, current_position, next_position)
             if has_cycle:
                 return True
             
-            graph = update_graph(graph, current_position, next_position)
         prev_position = current_position
         current_position = next_position
 
@@ -353,14 +363,34 @@ def search_grid_with_cycle_detection(graph : dict, grid : list, position_list : 
         return search_grid_with_cycle_detection(graph, grid, position_list, location_count=location_count, prev_position=prev_position)
     
 
-def count_inifinite_cycles_after_obstruction():
+def count_inifinite_cycles_after_obstruction(grid : list, positions : list):
     # place obstructions
+    
+    cycle_count = 0
+    # remove the starting position of guard from traversed position list
+    guard_starting_pos = positions[0]
+    obst_positions = remove_guard_starting_location(guard_starting_pos, positions)
+
+    for obst_pos in obst_positions:
+
+        grid_copy = deepcopy(grid)
+        grid_copy = place_obstruction(grid_copy, obst_pos)
+        graph = create_graph(grid_copy)
 
     # detect cycle
-
+        contains_cycle : bool = search_grid_with_cycle_detection(
+                                    graph, 
+                                    grid_copy, 
+                                    position_list=[get_position(get_guard_orientation(grid_copy))] ,
+                                    location_count=1,
+                                    prev_position=None 
+                                    )
+        print(contains_cycle)
     # count cycle
+        if contains_cycle:
+            cycle_count += 1
 
-    pass
+    return cycle_count
 
 if __name__ == "__main__":
     content = read_file("input.txt")
@@ -372,14 +402,6 @@ if __name__ == "__main__":
                                 )
     
     print("Part a: ", len(get_distint_positions(position_list)) )
-    graph = create_graph(grid)
-    orientation = get_guard_orientation(grid)
-    initial_position = get_position(orientation)
-    graph.pop((initial_position.x, initial_position.y))
-    search_grid_with_cycle_detection(
-                                    graph, 
-                                    deepcopy(grid), 
-                                    position_list=[get_position(get_guard_orientation(grid))] ,
-                                    location_count=1,
-                                    prev_position=None 
-                                    )
+   
+    cycle_count = count_inifinite_cycles_after_obstruction(grid, position_list)
+    print("Part b: ", cycle_count)
