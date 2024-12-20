@@ -87,7 +87,7 @@ def get_direction(orientation : tuple) -> Direction:
 def search_top(grid, guard_position : Position, positions : list, location_count = 0):
     
     next_position = Position(x=guard_position.x, y=guard_position.y - 1)
-
+    # print(guard_position, next_position)
     if next_position.y < 0:
         return Location(
                         location_count = location_count,
@@ -333,7 +333,7 @@ def search_grid_with_cycle_detection(graph : dict, grid : list, position_list : 
     position = get_position(orientation)
     direction = get_direction(orientation)
 
- 
+
     if direction == Direction.top:
         location : Location = search_top(grid, position, [], location_count)
 
@@ -367,7 +367,7 @@ def search_grid_with_cycle_detection(graph : dict, grid : list, position_list : 
         else:
             graph = update_graph(graph, current_position, next_position)
     
-        node_i += 1
+    node_i = len(position_list) - 1
 
     # base case that triggers when guard left the patrol area
     if direction == None:
@@ -389,7 +389,9 @@ def count_inifinite_cycles_after_obstruction(grid : list, positions : list):
     guard_starting_pos = positions[0]
     obst_positions = remove_guard_starting_location(guard_starting_pos, positions)
     i=0
+    # obst_positions = [Position(x=104, y=81)]
     for obst_pos in obst_positions:
+        print(f"Obsctruction No. : {i}, Obstruction Position : {obst_pos}")
 
         grid_copy = deepcopy(grid)
         grid_copy = place_obstruction(grid_copy, obst_pos)
@@ -407,7 +409,8 @@ def count_inifinite_cycles_after_obstruction(grid : list, positions : list):
         if contains_cycle:
             cycle_count += 1
         i += 1
-        print(f"Obsctruction No. : {i}, Obstruction Position : {obst_pos}, Cumulative Cycle Count :{cycle_count}")
+        
+        print(f"Cumulative Cycle Count : {cycle_count}")
     return cycle_count
 
 if __name__ == "__main__":
@@ -421,5 +424,5 @@ if __name__ == "__main__":
     
     print("Part a: ", len(get_distint_positions(position_list)) )
    
-    cycle_count = count_inifinite_cycles_after_obstruction(grid, position_list)
+    cycle_count = count_inifinite_cycles_after_obstruction(grid, get_distint_positions(position_list))
     print("Part b: ", cycle_count)
