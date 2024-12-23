@@ -277,12 +277,6 @@ def update_graph(graph, node_i_pos : Position, node_j_pos : Position):
         if node_j_pos == node.position:
             node.edge_vists += 1
 
-    # nodes : List[Node] = graph[(node_j_pos.x,node_j_pos.y)]
-    # # BFS to find the node_i neighbour
-    # for node in nodes:
-    #     if node_i_pos == node.position:
-    #         node.edge_vists += 1
-
     return graph
 
 def detect_infinite_cycle(graph, prev_position, current_position, next_position):
