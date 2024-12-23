@@ -270,20 +270,18 @@ def update_graph(graph, node_i_pos : Position, node_j_pos : Position):
     # hence retru the graph as it is without mutation
     if node_i_pos == None or node_j_pos == None:
         return graph
-    # since graph is not directed therefore we can traverse in any direction
-    # hence we need to update edge count from the perspective of both nodes
-    # even if we traverse from just 1 direction
+    # since graph is directed therefore we can traverse in just 1 direction at a time
     nodes : List[Node] = graph[(node_i_pos.x,node_i_pos.y)]
     # BFS to find the node_j neighbour
     for node in nodes:
         if node_j_pos == node.position:
             node.edge_vists += 1
 
-    nodes : List[Node] = graph[(node_j_pos.x,node_j_pos.y)]
-    # BFS to find the node_i neighbour
-    for node in nodes:
-        if node_i_pos == node.position:
-            node.edge_vists += 1
+    # nodes : List[Node] = graph[(node_j_pos.x,node_j_pos.y)]
+    # # BFS to find the node_i neighbour
+    # for node in nodes:
+    #     if node_i_pos == node.position:
+    #         node.edge_vists += 1
 
     return graph
 
