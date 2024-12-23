@@ -369,7 +369,7 @@ def search_grid_with_cycle_detection(graph : dict, grid : list, position_list : 
         # update grid
         grid[position.y][position.x] = '.'
         grid[updated_position.y][updated_position.x] = direction.value
-        # print(position_list)
+        
         return search_grid_with_cycle_detection(graph, grid, position_list, location_count=location_count, node_i=node_i)
     
 
