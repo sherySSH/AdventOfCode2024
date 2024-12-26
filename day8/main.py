@@ -95,7 +95,7 @@ def create_antinode(grid_x : int, grid_y : int, antenna_pair : AntennaPair) -> A
                           x=antenna_pair.j.x - 2*diff_x,
                           y=antenna_pair.j.y - 2*diff_y
                         )
-    
+    # count antinode only if it lies within the bounds of the grid
     if is_antinode_bounded(grid_x, grid_y, antinode_i):
         antinode_pair.i = antinode_i
     if is_antinode_bounded(grid_x, grid_y, antinode_j):
@@ -105,13 +105,8 @@ def create_antinode(grid_x : int, grid_y : int, antenna_pair : AntennaPair) -> A
     
 
 def is_antinode_bounded(grid_x : int, grid_y : int, antinode : Position):
-    if antinode.x >= grid_x:
-        return False
-    elif antinode.y >= grid_y:
-        return False
-    elif antinode.x < 0:
-        return False
-    elif antinode.y < 0:
+    # if antinode lies outside the grid then return False
+    if antinode.x >= grid_x or antinode.y >= grid_y or antinode.x < 0 or antinode.y < 0:
         return False
     else:
         return True
@@ -126,14 +121,17 @@ def create_antinodes(grid_x : int, grid_y : int, freq_pairs : dict):
     return antinode_pairs
 
 
-def flatten_antinode_pairs(antinode_pairs : list):
+def flatten_antinode_pairs(antinode_pairs : List[AntinodePair]):
     antinodes : list = []
     pair : AntinodePair
-    for pair in antinode_pairs: 
-        if pair.i is not None:
+    for pair in antinode_pairs:
+        # if antinode is duplicate then we do not count it
+        # if antinode lies outside the bounds of grid we do not consider it
+
+        if pair.i not in antinodes and pair.i is not None:
             antinodes.append(pair.i)
 
-        if pair.j is not None:
+        if pair.j not in antinodes and pair.j is not None:
             antinodes.append(pair.j)
     
     return antinodes
@@ -143,12 +141,11 @@ if __name__ == "__main__":
     grid = preprocessing(content)
     antennas = get_antennas(grid)
 
-    print(antennas)
     antennas : Mapping[str, List[tuple]] = drop_single_antenna(antennas)
     freq_pairs : Mapping[str, List[AntinodePair]] = create_pairs_for_all_freqs(antennas)
-    # print(freq_pairs)
+
     antinode_pairs : List[AntinodePair] = create_antinodes(len(grid) , len(grid[0]), freq_pairs)
     antinodes : list = flatten_antinode_pairs(antinode_pairs)
-    print(antinode_pairs)
+
     print("Part a:",len(antinodes))
     
