@@ -44,6 +44,9 @@ def fragment(sparse_format : List[Block]) -> list:
         # move tail to the occupied bloack
         while sparse_format[tail].file_id == '.':
             tail -= 1
+        
+        if head > tail:
+            break
 
         # once we have correct head and tail then perform swap
         temp = sparse_format[tail]
@@ -60,15 +63,16 @@ def calc_checksum(frag_mem : List[Block]) -> int:
     for block in frag_mem:
         if block.file_id != '.':
             checksum += index * int(block.file_id)
-            index += 1
+        index += 1
 
     return checksum
+
+
 
 if __name__ == "__main__":
     disk_map = read_file('input.txt')
     sparse_format = uncompress(disk_map)
-    # print(sparse_format)
+    
     frag_mem = fragment(sparse_format)
-    # print(frag_mem)
     checksum = calc_checksum(frag_mem)
-    print(checksum)
+    print("Part a:", checksum)
