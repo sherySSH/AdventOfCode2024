@@ -22,7 +22,7 @@ def processing(content : str):
 
     return grid
 
-def get_trailheads(grid : List[List[str]]) -> List[Position]:
+def get_trailheads(grid : List[List[int]]) -> List[Position]:
     trailheads = []
     for y in range(len(grid)):
         for x in range(len(grid[0])):
@@ -32,7 +32,7 @@ def get_trailheads(grid : List[List[str]]) -> List[Position]:
                 )
     return trailheads
 
-def search_top(grid : List[List[str]] , trail : List[Position]):
+def search_top(grid : List[List[int]] , trail : List[Position]):
     position  = trail[-1]
     current_height = grid[position.y][position.x]
     if (position.y - 1) >= 0:
@@ -56,7 +56,7 @@ def search_top(grid : List[List[str]] , trail : List[Position]):
 
 
 
-def search_right(grid : List[List[str]] , trail : List[Position]):
+def search_right(grid : List[List[int]] , trail : List[Position]):
     position  = trail[-1]
     current_height = grid[position.y][position.x]
     if (position.x + 1) < len(grid[position.y]):
@@ -79,7 +79,7 @@ def search_right(grid : List[List[str]] , trail : List[Position]):
         return trail
 
 
-def search_bottom(grid : List[List[str]] , trail : List[Position]):
+def search_bottom(grid : List[List[int]] , trail : List[Position]):
     position  = trail[-1]
     current_height = grid[position.y][position.x]
     if (position.y + 1) < len(grid):
@@ -102,7 +102,7 @@ def search_bottom(grid : List[List[str]] , trail : List[Position]):
         return trail
 
 
-def search_left(grid : List[List[str]] , trail : List[Position]):
+def search_left(grid : List[List[int]] , trail : List[Position]):
     position  = trail[-1]
     current_height = grid[position.y][position.x]
     if (position.x - 1) >= 0:
@@ -129,6 +129,35 @@ def validate_trail(trail : List[Position]) -> bool:
         return True
     else:
         return False
+
+
+def search_grid(grid : List[List[int]], trailheads : List[Position]):
+    
+    trailhead_scores = { trailhead : 0 for trailhead in trailheads}
+
+    for trailhead in trailheads:
+        trail = search_top(grid, [trailhead])
+        is_trail_found = validate_trail(trail)
+        if is_trail_found:
+            trailhead_scores[trailhead] += 1
+
+        trail = search_right(grid, [trailhead])
+        is_trail_found = validate_trail(trail)
+        if is_trail_found:
+            trailhead_scores[trailhead] += 1
+
+        trail = search_bottom(grid, [trailhead])
+        is_trail_found = validate_trail(trail)
+        if is_trail_found:
+            trailhead_scores[trailhead] += 1
+
+        trail = search_left(grid, [trailhead])
+        is_trail_found = validate_trail(trail)
+        if is_trail_found:
+            trailhead_scores[trailhead] += 1
+        
+        
+
 
 if __name__ == "__main__":
     content = read_file("input.txt")
