@@ -79,21 +79,26 @@ def cache_all_stones():
         table = cache_a_stone(initial_stone, stones=[initial_stone], table=table, blink_count=0)
     return table
 
-def calc_n_stones_dp(n_blinks, stones : list, table : Mapping[int, CachedStone], blink_count : int = 0, n_stones : int = 0):
+def calc_n_stones_memoized(n_blinks, stones : list, table : Mapping[int, CachedStone], blink_count : int = 0, n_stones : int = 0):
     
-    if blink_count > n_blinks:
+    if blink_count == n_blinks:
         n_stones += len(stones)
         return n_stones
     
     else:
-        split_stones = []
         for stone in stones:
-            print(blink_count, stone)
+            # for each stone we want to maintain stack of split stones
+            # which will be recursively explored in DFS manner
+            split_stones = []
+            print(n_stones, blink_count, stone)
             if stone in table and table[stone].blink_count <= (n_blinks - blink_count):
-                blink_count += table[stone].blink_count
+                
                 split_stones.extend( table[stone].split_stones )
+                # this counts how many times we blinked so far
+                blink_count += table[stone].blink_count
                 
             else:
+                # this counts how many times we blinked so far
                 blink_count += 1
 
                 if stone == 0:
@@ -112,7 +117,8 @@ def calc_n_stones_dp(n_blinks, stones : list, table : Mapping[int, CachedStone],
                     split_stones.append( stone * 2024 )
 
             # insert the result of stone decomposition to the split stones for the i-th stone all the way to nth blinks
-            n_stones = calc_n_stones_dp(n_blinks, stones=split_stones, table=table, blink_count=blink_count, n_stones=n_stones)
+            n_stones = calc_n_stones_memoized(n_blinks, stones=split_stones, table=table, blink_count=blink_count, n_stones=n_stones)
+            blink_count -= 1
 
     return n_stones
 
@@ -127,6 +133,6 @@ if __name__ == "__main__":
     print(cache)
     table = cache_all_stones()
     # print(table)
-    n_stones = calc_n_stones_dp(n_blinks=5, stones=[125], table=table, blink_count=0, n_stones=0)
+    n_stones = calc_n_stones_memoized(n_blinks=5, stones=[125, 17], table=table, blink_count=0, n_stones=0)
     print(n_stones)
     # print("Part b:", len(split_stones))
