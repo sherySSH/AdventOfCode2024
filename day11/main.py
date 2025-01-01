@@ -79,11 +79,11 @@ def cache_all_stones():
         table = cache_a_stone(initial_stone, stones=[initial_stone], table=table, blink_count=0)
     return table
 
-def calc_n_stones_dp(n_blinks, stones : list, table : Mapping[int, CachedStone], blink_count : int = 0, final_stones : list = []):
+def calc_n_stones_dp(n_blinks, stones : list, table : Mapping[int, CachedStone], blink_count : int = 0, n_stones : int = 0):
     
     if blink_count > n_blinks:
-        final_stones.extend(stones)
-        return final_stones
+        n_stones += len(stones)
+        return n_stones
     
     else:
         split_stones = []
@@ -112,9 +112,9 @@ def calc_n_stones_dp(n_blinks, stones : list, table : Mapping[int, CachedStone],
                     split_stones.append( stone * 2024 )
 
             # insert the result of stone decomposition to the split stones for the i-th stone all the way to nth blinks
-            final_stones.extend(calc_n_stones_dp(n_blinks, stones=split_stones, table=table, blink_count=blink_count, final_stones=final_stones))
+            n_stones = calc_n_stones_dp(n_blinks, stones=split_stones, table=table, blink_count=blink_count, n_stones=n_stones)
 
-    return final_stones
+    return n_stones
 
 if __name__ == "__main__":
     content = read_file("input.txt")
@@ -127,6 +127,6 @@ if __name__ == "__main__":
     print(cache)
     table = cache_all_stones()
     # print(table)
-    split_stones = calc_n_stones_dp(n_blinks=75, stones=[2], table=table, blink_count=0, final_stones=[])
-    print(split_stones)
+    n_stones = calc_n_stones_dp(n_blinks=5, stones=[125], table=table, blink_count=0, n_stones=0)
+    print(n_stones)
     # print("Part b:", len(split_stones))
