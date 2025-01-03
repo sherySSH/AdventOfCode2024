@@ -141,7 +141,7 @@ def calc_n_stones_memoized(n_blinks, stones : list, table : Mapping[int, CachedS
     return n_stones, split_stones
 
 
-def calc_n_stones_memoized2(n_blinks, stones : list, table : Mapping[int, CachedStone], blink_count_list : list = [0], n_stones : int = 0):
+def calc_n_stones_memoized2(n_blinks, stones : list, table : Mapping[int, CachedStone], blink_count_list : list = [], n_stones : int = 0):
     """
     blink_count_list : each edge of tree containes the blink count of a node, this list contains
                        the blink count from each node in the given branch
@@ -150,35 +150,36 @@ def calc_n_stones_memoized2(n_blinks, stones : list, table : Mapping[int, Cached
                (those stones that are given as input)
     """
     
-    # print(blink_count_list[0])
+    
 
-    if  len(blink_count_list) != 0 and blink_count_list[0] == n_blinks:
-        print(blink_count_list, n_blinks)
+    if  len(blink_count_list) != 0 and sum(blink_count_list) == n_blinks:
+        # print(blink_count_list, n_blinks, n_stones)
         n_stones += len(stones)
-        return n_stones
+        return n_stones, table
     
     else:
         for stone in stones:
             # for each stone we want to maintain stack of split stones
             # which will be recursively explored in DFS manner
             split_stones = []
-            blink_count_list.append(0)
-            if stone in table and table[stone].blink_count <= (n_blinks - blink_count_list[0]):
-                print(blink_count_list, n_blinks)
+        
+            if stone in table and table[stone].blink_count <= (n_blinks - sum(blink_count_list)):
+                # print(blink_count_list, n_blinks)
                 # updating blink count list, thereby, updating the edges in the branch
-                blink_count_list = [blink + table[stone].blink_count for blink in blink_count_list ]
+                blink_count_list.append(table[stone].blink_count)
                 
                 split_stones.extend( table[stone].split_stones )
 
                 # insert the result of stone decomposition to the split stones for the i-th stone all the way to nth blinks
-                n_stones = calc_n_stones_memoized2(n_blinks, stones=split_stones, table=table, blink_count_list=blink_count_list, n_stones=n_stones)
+                n_stones, table = calc_n_stones_memoized2(n_blinks, stones=split_stones, table=table, blink_count_list=blink_count_list, n_stones=n_stones)
                 # we will arrive at his line when we have completely explored 1 internal node, and now we want to explore the second
                 # internal node present at the same level
                 # blink_count -= table[stone].blink_count
+                last_blink_count = blink_count_list.pop()
 
             else:
                 # updating blink count list, thereby, updating the edges in the branch
-                blink_count_list = [blink + 1 for blink in blink_count_list ]
+                blink_count_list.append(1)
 
                 if stone == 0:
                     split_stones.append(1)
@@ -196,18 +197,15 @@ def calc_n_stones_memoized2(n_blinks, stones : list, table : Mapping[int, Cached
                     split_stones.append( stone * 2024 )
 
                 
-                n_stones = calc_n_stones_memoized2(n_blinks, stones=split_stones, table=table, blink_count_list=blink_count_list, n_stones=n_stones)
+                n_stones, table = calc_n_stones_memoized2(n_blinks, stones=split_stones, table=table, blink_count_list=blink_count_list, n_stones=n_stones)
                 # we will arrive at his line when we have completely explored 1 internal node, and now we want to explore the second
                 # internal node present at the same level
                 # blink_count -= 1
+                last_blink_count = blink_count_list.pop()
 
-            last_blink_count = blink_count_list.pop()
-            blink_count_list = [blink - last_blink_count for blink in blink_count_list]
+            # table = cache_a_stone(stone, [stone], table)
 
-            # if stone not in table:
-                # table[stone] = CachedStone(split_stones=split_stones, blink_count=last_blink_count)
-
-    return n_stones
+    return n_stones, table
 
 if __name__ == "__main__":
     content = read_file("input.txt")
@@ -219,6 +217,6 @@ if __name__ == "__main__":
     cache = cache_a_stone(2, [2], {})
     table = cache_all_stones(stones_range = 10)
     print(table)
-    n_stones = calc_n_stones_memoized2(n_blinks=25, stones=stones, table=table, blink_count_list=[], n_stones=0)
+    n_stones, _ = calc_n_stones_memoized2(n_blinks=30, stones=stones, table=table, blink_count_list=[], n_stones=0)
     print(n_stones)
     print("Part b:", n_stones)
