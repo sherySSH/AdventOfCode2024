@@ -1,4 +1,5 @@
 from typing import List, Mapping
+import math
 from dataclasses import dataclass
 
 @dataclass
@@ -80,8 +81,8 @@ def cache_all_stones(stones_range = 10):
     table : Mapping[int, CachedStone]= {}
     for initial_stone in range(0,stones_range):
         table = cache_a_stone(initial_stone, stones=[initial_stone], table=table, blink_count=0)
-        for split_stone in table[initial_stone].split_stones:
-            table = cache_a_stone(initial_stone=split_stone, stones=[split_stone], table=table, blink_count=0)
+        # for split_stone in table[initial_stone].split_stones:
+            # table = cache_a_stone(initial_stone=split_stone, stones=[split_stone], table=table, blink_count=0)
 
     return table
 
@@ -207,6 +208,91 @@ def calc_n_stones_memoized2(n_blinks, stones : list, table : Mapping[int, Cached
 
     return n_stones, table
 
+
+def calc_n_stones_memoized3(n_blinks, stones : list, table : Mapping[int, CachedStone], blinks : list, n_stones : int) -> int:
+    """
+    blink_count_list : each edge of tree containes the blink count of a node, this list contains
+                       the blink count from each node in the given branch
+
+    n_blinks : specifies total blinks we need to perform from the first level of stones 
+               (those stones that are given as input)
+    """
+
+    # if n_blinks have reached then we are left with 0 amounts of stones that have to be splitted
+    # hence it is a base case
+    if len(stones) == 0:
+        return n_stones
+
+    print(max(blinks), min(blinks))
+    # new level of stones
+    new_stones = []
+    # blink counts of new level of stones
+    new_blinks = []
+    # print(stones, blinks)
+    for index, stone in enumerate(stones):
+        # if n_blinks have already been reached for a stone 
+        # then do not decompose it further
+        if blinks[index] == n_blinks:
+            n_stones += 1
+            continue
+        
+        # if stone already exist in cached table then fetch the split stones from there
+        # instead of calculating them again
+        if stone in table and ( table[stone].blink_count + blinks[index]) <= n_blinks:
+            split_stones : list = table[stone].split_stones
+            prev_blink : int = blinks[index]
+            new_stones.extend(split_stones)
+            new_blinks.extend( [prev_blink + table[stone].blink_count] * len(split_stones)  )
+
+        elif stone == 0:
+            prev_blink : int = blinks[index]
+            new_stones.append(1)
+            new_blinks.append(prev_blink + 1)
+            
+        # if number of digits are in power of 2 
+        # then the number will ultimately be reduced to single digits after several blinks
+        elif (math.log2( len(str(stone)) ) % 2 == 0 or math.log2( len(str(stone)) ) % 2 == 1 ) and len(str(stone)) > 1:
+            split_stones = [int(stone) for stone in list(str(stone))]
+            new_blink = int( math.log2( len(str(stone)) ) )
+            prev_blink : int = blinks[index]
+
+            if (prev_blink + new_blink) <= n_blinks:
+                new_stones.extend(split_stones)
+                new_blinks.extend( [prev_blink + new_blink] * len(split_stones)  )
+            else:
+                start = 0
+                end = len(str(stone))
+                half = (start + end ) // 2
+                
+                new_stones.append( int(str(stone)[start:half]) )
+                new_stones.append( int(str(stone)[half:end]) )
+
+                prev_blink : int = blinks[index]
+                new_blinks.append(prev_blink + 1)
+                new_blinks.append(prev_blink + 1)
+
+            
+        # if number of digits are even
+        elif len(str(stone)) % 2 == 0:
+            
+            start = 0
+            end = len(str(stone))
+            half = (start + end ) // 2
+            
+            new_stones.append( int(str(stone)[start:half]) )
+            new_stones.append( int(str(stone)[half:end]) )
+
+            prev_blink : int = blinks[index]
+            new_blinks.append(prev_blink + 1)
+            new_blinks.append(prev_blink + 1)
+
+        else:
+            prev_blink : int = blinks[index]
+            new_stones.append( stone * 2024 )
+            new_blinks.append(prev_blink + 1)
+
+    return calc_n_stones_memoized3(n_blinks, new_stones, table, new_blinks, n_stones)
+
 if __name__ == "__main__":
     content = read_file("input.txt")
     stones : List[int] = processing(content)
@@ -217,6 +303,11 @@ if __name__ == "__main__":
     cache = cache_a_stone(2, [2], {})
     table = cache_all_stones(stones_range = 10)
     print(table)
-    n_stones, _ = calc_n_stones_memoized2(n_blinks=30, stones=stones, table=table, blink_count_list=[], n_stones=0)
-    print(n_stones)
+    # n_stones, _ = calc_n_stones_memoized2(n_blinks=30, stones=stones, table=table, blink_count_list=[], n_stones=0)
+    # print(n_stones)
+    n_stones = calc_n_stones_memoized3(n_blinks=25,
+                                        stones=stones,
+                                        table=table,
+                                        blinks=[0]*len(stones),
+                                        n_stones=0)
     print("Part b:", n_stones)
