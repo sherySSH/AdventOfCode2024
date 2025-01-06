@@ -1,5 +1,6 @@
 from typing import List, Mapping
 import math
+from itertools import chain
 from dataclasses import dataclass
 
 @dataclass
@@ -223,13 +224,12 @@ def calc_n_stones_memoized3(n_blinks, stones : list, table : Mapping[int, Cached
     if len(stones) == 0:
         return n_stones
 
-    print(max(blinks), min(blinks))
     # new level of stones
     new_stones = []
     # blink counts of new level of stones
     new_blinks = []
-    # print(stones, blinks)
-    for index, stone in enumerate(stones):
+    print(stones)
+    for index, stone in enumerate( chain.from_iterable(stones) ):
         # if n_blinks have already been reached for a stone 
         # then do not decompose it further
         if blinks[index] == n_blinks:
@@ -241,31 +241,30 @@ def calc_n_stones_memoized3(n_blinks, stones : list, table : Mapping[int, Cached
         if stone in table and ( table[stone].blink_count + blinks[index]) <= n_blinks:
             split_stones : list = table[stone].split_stones
             prev_blink : int = blinks[index]
-            new_stones.extend(split_stones)
+            new_stones.append(tuple(split_stones) )
             new_blinks.extend( [prev_blink + table[stone].blink_count] * len(split_stones)  )
 
         elif stone == 0:
             prev_blink : int = blinks[index]
-            new_stones.append(1)
+            new_stones.append((1,))
             new_blinks.append(prev_blink + 1)
             
         # if number of digits are in power of 2 
         # then the number will ultimately be reduced to single digits after several blinks
-        elif (math.log2( len(str(stone)) ) % 2 == 0 or math.log2( len(str(stone)) ) % 2 == 1 ) and len(str(stone)) > 1:
+        elif ( math.log2( len(str(stone)) ) % 2 == 0 or math.log2( len(str(stone)) ) % 2 == 1 ) and len(str(stone)) > 1 and '0' not in list(str(stone)):
             split_stones = [int(stone) for stone in list(str(stone))]
             new_blink = int( math.log2( len(str(stone)) ) )
             prev_blink : int = blinks[index]
 
             if (prev_blink + new_blink) <= n_blinks:
-                new_stones.extend(split_stones)
+                new_stones.append(tuple(split_stones))
                 new_blinks.extend( [prev_blink + new_blink] * len(split_stones)  )
             else:
                 start = 0
                 end = len(str(stone))
                 half = (start + end ) // 2
                 
-                new_stones.append( int(str(stone)[start:half]) )
-                new_stones.append( int(str(stone)[half:end]) )
+                new_stones.append( ( int(str(stone)[start:half]) , int(str(stone)[half:end]) ) )
 
                 prev_blink : int = blinks[index]
                 new_blinks.append(prev_blink + 1)
@@ -279,8 +278,7 @@ def calc_n_stones_memoized3(n_blinks, stones : list, table : Mapping[int, Cached
             end = len(str(stone))
             half = (start + end ) // 2
             
-            new_stones.append( int(str(stone)[start:half]) )
-            new_stones.append( int(str(stone)[half:end]) )
+            new_stones.append( ( int(str(stone)[start:half]) , int(str(stone)[half:end]) ) )
 
             prev_blink : int = blinks[index]
             new_blinks.append(prev_blink + 1)
@@ -288,7 +286,7 @@ def calc_n_stones_memoized3(n_blinks, stones : list, table : Mapping[int, Cached
 
         else:
             prev_blink : int = blinks[index]
-            new_stones.append( stone * 2024 )
+            new_stones.append( (stone * 2024,) )
             new_blinks.append(prev_blink + 1)
 
     return calc_n_stones_memoized3(n_blinks, new_stones, table, new_blinks, n_stones)
@@ -305,8 +303,8 @@ if __name__ == "__main__":
     print(table)
     # n_stones, _ = calc_n_stones_memoized2(n_blinks=30, stones=stones, table=table, blink_count_list=[], n_stones=0)
     # print(n_stones)
-    n_stones = calc_n_stones_memoized3(n_blinks=25,
-                                        stones=stones,
+    n_stones = calc_n_stones_memoized3(n_blinks=3,
+                                        stones=[(stone, ) for stone in stones],
                                         table=table,
                                         blinks=[0]*len(stones),
                                         n_stones=0)
