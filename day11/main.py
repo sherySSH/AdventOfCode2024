@@ -72,6 +72,15 @@ def splitted(stone : int):
 
 
 def calc_n_stones_compressed(n_blinks, stones : dict, blink_count : int = 0):
+
+    """
+    We are using BFS traversal for stone splitting. This means we move onto next level
+    for recursively splitting the stones, once we have splitted all stones at current level.
+    Storing individual stones is expensive due to huge memory footprint, therefre I compress
+    them by just storing the counts of a stone. So if at a given level, if a stone "4" occurs
+    10 times then 4 would be a key and 10 would be its value. This is a memory efficient way
+    of storing stones intead of storing them individually.
+    """
     
     if blink_count == n_blinks:
         return sum(stones.values())
