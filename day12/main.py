@@ -101,11 +101,22 @@ def calc_perimeter(grid : List[List[Node]], queue : list):
 
     return calc_perimeter(grid, new_queue)
 
+def mark_region(grid, queue_p1 : list, queue_p2 : list):
+    """
+    queue_p1 is the Priority 1 queue
+    queue_p2 is the Priority 2 queue
+
+    Priority importance is:
+    1 has higher priority than 2
+    """
+    
+    pass
+
 if __name__ == "__main__":
     content = read_file("input.txt")
     grid = processing(content)
-    set_queue = [ Position(x=0,y=0) ]
+    queue = [ Position(x=0,y=0) ]
     
-    grid = calc_perimeter(grid, set_queue)
+    grid = calc_perimeter(grid, queue)
     print(grid)
     
