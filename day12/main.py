@@ -4,7 +4,7 @@ from queue import Queue
 
 @dataclass
 class Node:
-    value : int
+    value : str
     perimeter : int
     region : int
 
@@ -101,7 +101,18 @@ def calc_perimeter(grid : List[List[Node]], queue : list):
 
     return calc_perimeter(grid, new_queue)
 
-def mark_region(grid, queue_p1 : list, queue_p2 : list):
+
+def update_queue_for_area(grid : List[List[Node]], parent : Position, queue_p1 : list, queue_p2 : list, child_pos : Position):
+    if child_pos != None and grid[child_pos.y][child_pos.x].region == None:
+        if grid[child_pos.y][child_pos.x].value == grid[parent.y][parent.x].value:
+            grid[child_pos.y][child_pos.x].region = grid[parent.y][parent.x].region
+            queue_p1.append(child_pos)
+        else:
+            queue_p2.append(child_pos)
+
+    return queue_p1, queue_p2
+
+def mark_region(grid : List[List[Node]], queue_p1 : list, queue_p2 : list, region = 0):
     """
     queue_p1 is the Priority 1 queue
     queue_p2 is the Priority 2 queue
@@ -110,13 +121,69 @@ def mark_region(grid, queue_p1 : list, queue_p2 : list):
     1 has higher priority than 2
     """
     
-    pass
+    
+    while True:
+        new_queue_p1 = []
+        while len(queue_p1) != 0:
+            current_pos : Position = queue_p1.pop(0)
+            # set the value of a perimeter for a current Node
+            grid[current_pos.y][current_pos.x].region = region 
+
+            # search top side
+            child_pos : Position = search_grid(grid, direction='top', current_pos=current_pos)
+            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+            # search right side
+            child_pos : Position = search_grid(grid, direction='right', current_pos=current_pos)
+            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+            # search bottom side
+            child_pos : Position = search_grid(grid, direction='bottom', current_pos=current_pos)
+            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+            # search left side
+            child_pos : Position = search_grid(grid, direction='left', current_pos=current_pos)
+            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+
+        if len(new_queue_p1) == 0 and len(queue_p2) != 0:
+            current_pos : Position = queue_p2.pop(0)
+            while grid[current_pos.y][current_pos.x].region != None and len(queue_p2) != 0:
+                current_pos : Position = queue_p2.pop(0)
+
+            if len(queue_p2) !=0: new_queue_p1.append( current_pos )
+            # now next region would be different
+            # in other words, color of upcoming nodes will be different
+            region += 1
+        
+        # loop breaker
+        elif len(new_queue_p1) == 0 and len(queue_p2) == 0:
+            # when nothing is left to be marked then break and return the grid
+            break
+
+        queue_p1 = new_queue_p1
+
+    return grid
+
+def calc_price_parta(grid : List[List[Node]]):
+    regions = { }
+    for x in range(len(grid)):
+        for y in range(len(grid[x])):
+            node = grid[y][x]
+            if node.region not in regions:
+                regions[node.region] = { "area" : 1, "perimeter" : node.perimeter}
+            else:
+                regions[node.region]["area"] += 1
+                regions[node.region]["perimeter"] += node.perimeter
+
+    price = 0
+    for region in regions:
+        price += regions[region]["area"] * regions[region]["perimeter"]
+
+    return price
 
 if __name__ == "__main__":
     content = read_file("input.txt")
     grid = processing(content)
     queue = [ Position(x=0,y=0) ]
-    
     grid = calc_perimeter(grid, queue)
-    print(grid)
+    grid = mark_region(grid, [ Position(x=0,y=0) ], [])
+    price = calc_price_parta(grid)
+    print("Part a:", price)
     
