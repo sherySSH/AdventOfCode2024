@@ -1,17 +1,29 @@
 from dataclasses import dataclass
-from typing import List
-from queue import Queue
+from typing import List, Mapping, Set
+from enum import Enum
+
+class Direction(str, Enum):
+    L = 'left'
+    R = 'right'
+    T = 'top'
+    B = 'bottom'
 
 @dataclass
 class Node:
     value : str
     perimeter : int
     region : int
+    sides : List[Direction]
+    non_overlapping_sides_count : int
 
 @dataclass
 class Position:
     x : int
     y : int
+
+    # to make Position object hashable implement __hash__ method
+    def __hash__(self):
+        return hash((self.x,self.y))
 
 def read_file(path : str) -> str:
     with open(path, 'r') as f:
@@ -25,7 +37,12 @@ def processing(content : str):
     for line in lines:
         row : List[str] = []
         for value in list(line):
-            node = Node(value=value, perimeter=None, region=None)
+            node = Node(value=value, 
+                        perimeter=None, 
+                        region=None, 
+                        sides=None, 
+                        non_overlapping_sides_count=None
+                        )
             row.append(node)
         grid.append(row)
     
@@ -57,6 +74,10 @@ def search_grid(grid, direction, current_pos : Position):
         else:
             return None
 
+
+#####################################
+########### Part A Starts ###########
+#####################################
 
 def update_queue_for_perimeter(grid : List[List[Node]], queue : list, children : list, child_pos : Position):
     if child_pos != None:
@@ -203,6 +224,135 @@ def calc_price_parta(grid : List[List[Node]]):
 
     return price
 
+#####################################
+########### Part B Starts ###########
+#####################################
+
+def is_side_blocked(grid : List[List[Node]], parent : Position, child : Position):
+    
+    # otherwise try to count sides if node belongs to same region as parent
+    if  child is None or grid[parent.y][parent.x].region != grid[child.y][child.x].region:
+        return True
+    else:
+        return False
+
+def is_updated(grid : List[List[Node]], child : Position, queue : list):
+    
+    # if no neighbouring child exists so return True because we cannot explore
+    # something that does not exist
+    if child is None or child in queue:
+        return True
+    # checks if node has already been computed for counting sides
+    elif grid[child.y][child.x].sides != None:
+        return True
+    else:
+        return False
+
+
+def calc_sides(grid : List[List[Node]], queue : List[Position]):
+    while True:
+        # for each new level create:
+        new_queue : List[Position] = []
+        # for each new level create:
+        total_sides = {}
+        while len(queue) != 0:
+            current_pos : Position = queue.pop(0)
+            sides : List[Direction] = []
+            # search top side
+            child_pos : Position = search_grid(grid, direction='top', current_pos=current_pos)
+            if is_side_blocked(grid, current_pos, child_pos): sides.append(Direction.T)
+            if not is_updated(grid, child_pos, new_queue): new_queue.append(child_pos)
+            # search right side
+            child_pos : Position = search_grid(grid, direction='right', current_pos=current_pos)
+            if is_side_blocked(grid, current_pos, child_pos): sides.append(Direction.R)
+            if not is_updated(grid, child_pos, new_queue): new_queue.append(child_pos)
+            # search bottom side
+            child_pos : Position = search_grid(grid, direction='bottom', current_pos=current_pos)
+            if is_side_blocked(grid, current_pos, child_pos): sides.append(Direction.B)
+            if not is_updated(grid, child_pos, new_queue): new_queue.append(child_pos)
+            # search left side
+            child_pos : Position = search_grid(grid, direction='left', current_pos=current_pos)
+            if is_side_blocked(grid, current_pos, child_pos): sides.append(Direction.L)
+            if not is_updated(grid, child_pos, new_queue): new_queue.append(child_pos)
+            
+            if current_pos not in total_sides:
+                total_sides[current_pos] = sides
+            elif len(sides) < len(total_sides):
+                total_sides[current_pos] = sides 
+            else:
+                pass
+        
+        # updating the sides for each node
+        pos : Position
+        for pos in total_sides:
+            grid[pos.y][pos.x].sides = total_sides[pos]
+
+        queue = new_queue
+
+
+        if len(queue) == 0:
+            break
+
+    return grid
+
+def update_side_count(grid : List[List[Node]], parent : Position, child : Position):
+    parent_sides : Set[Direction] = set(grid[parent.y][parent.x].sides)
+    if child is not None:
+        child_sides : Set[Direction] = set(grid[child.y][child.x].sides)
+        grid[child.y][child.x].non_overlapping_sides_count = len(parent_sides - child_sides)
+
+def calc_non_overlap_sides(grid : List[List[Node]], queue_p1 : list, queue_p2 : list,):
+    while True:
+        new_queue_p1 = []
+        while len(queue_p1) != 0:
+            current_pos : Position = queue_p1.pop(0)
+
+            # search top side
+            child_pos : Position = search_grid(grid, direction='top', current_pos=current_pos)
+            # updating the non overlapping side count for neighbour/child node
+            update_side_count(grid, parent=current_pos, child=child_pos)
+            # updating the queue for making next level for traversal
+            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+
+            # search right side
+            child_pos : Position = search_grid(grid, direction='right', current_pos=current_pos)
+            # updating the non overlapping side count for neighbour/child node
+            update_side_count(grid, parent=current_pos, child=child_pos)
+            # updating the queue for making next level for traversal
+            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+
+            # search bottom side
+            child_pos : Position = search_grid(grid, direction='bottom', current_pos=current_pos)
+            # updating the non overlapping side count for neighbour/child node
+            update_side_count(grid, parent=current_pos, child=child_pos)
+            # updating the queue for making next level for traversal
+            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+
+            # search left side
+            child_pos : Position = search_grid(grid, direction='left', current_pos=current_pos)
+            # updating the non overlapping side count for neighbour/child node
+            update_side_count(grid, parent=current_pos, child=child_pos)
+            # updating the queue for making next level for traversal
+            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+
+        if len(new_queue_p1) == 0 and len(queue_p2) != 0:
+            # keep popping nodes from queue_p2 until an uncolored node is found
+            # whose region is still needs to be discovered
+            current_pos : Position = queue_p2.pop(0)
+            while grid[current_pos.y][current_pos.x].region != None and len(queue_p2) != 0:
+                current_pos : Position = queue_p2.pop(0)
+            
+            if len(queue_p2) !=0: new_queue_p1.append( current_pos )
+
+        # loop breaker
+        elif len(new_queue_p1) == 0 and len(queue_p2) == 0:
+            # when nothing is left to be marked then break and return the grid
+            break
+
+        queue_p1 = new_queue_p1
+
+    return grid
+
 if __name__ == "__main__":
     content = read_file("input.txt")
     grid = processing(content)
@@ -211,4 +361,6 @@ if __name__ == "__main__":
     grid = mark_region(grid, [ Position(x=0,y=0) ], [])
     price = calc_price_parta(grid)
     print("Part a:", price)
-    
+    grid = calc_sides(grid, [ Position(x=0,y=0) ])
+    grid = calc_non_overlap_sides(grid, [ Position(x=0,y=0) ], [])
+    print(grid)
