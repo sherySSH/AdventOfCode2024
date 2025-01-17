@@ -9,14 +9,6 @@ class Direction(str, Enum):
     B = 'bottom'
 
 @dataclass
-class Node:
-    value : str
-    perimeter : int
-    region : int
-    sides : List[Direction]
-    non_overlapping_sides_count : int
-
-@dataclass
 class Position:
     x : int
     y : int
@@ -24,6 +16,17 @@ class Position:
     # to make Position object hashable implement __hash__ method
     def __hash__(self):
         return hash((self.x,self.y))
+
+@dataclass
+class Node:
+    value : str
+    perimeter : int
+    region : int
+    sides : List[Direction]
+    non_overlapping_sides_count : int
+    parent : List[Position]
+
+
 
 def read_file(path : str) -> str:
     with open(path, 'r') as f:
@@ -41,7 +44,8 @@ def processing(content : str):
                         perimeter=None, 
                         region=None, 
                         sides=None, 
-                        non_overlapping_sides_count=None
+                        non_overlapping_sides_count=None,
+                        parent=[]
                         )
             row.append(node)
         grid.append(row)
@@ -295,51 +299,72 @@ def calc_sides(grid : List[List[Node]], queue : List[Position]):
 
     return grid
 
-def update_side_count(grid : List[List[Node]], parent : Position, child : Position):
-    parent_sides : Set[Direction] = set(grid[parent.y][parent.x].sides)
-    if child is not None:
-        child_sides : Set[Direction] = set(grid[child.y][child.x].sides)
-        grid[child.y][child.x].non_overlapping_sides_count = len(parent_sides - child_sides)
+
+def update_queue_for_sides(grid : List[List[Node]], parent : Position, queue_p1 : list, queue_p2 : list, child_pos : Position):
+    
+    if child_pos != None: 
+        child_sides : Set[Direction] = set(grid[child_pos.y][child_pos.x].sides)
+        if child_pos in grid[parent.y][parent.x].parent:
+            return queue_p1, queue_p2
+        elif grid[child_pos.y][child_pos.x].region == grid[parent.y][parent.x].region:
+            grid[child_pos.y][child_pos.x].parent.append(parent)
+            # calculate union of all prent sides
+            parent_sides = []
+            for parent_i in  grid[child_pos.y][child_pos.x].parent:
+                parent_sides.extend(grid[parent_i.y][parent_i.x].sides)
+            # union calculation completed
+            parent_sides = set(parent_sides)
+            # find unique sides that are not present in parent sides
+            sides_count = len(child_sides - parent_sides)
+            if grid[child_pos.y][child_pos.x].non_overlapping_sides_count == None:
+                grid[child_pos.y][child_pos.x].non_overlapping_sides_count = sides_count
+                queue_p1.append(child_pos)
+            else:
+                grid[child_pos.y][child_pos.x].non_overlapping_sides_count = min(sides_count, grid[child_pos.y][child_pos.x].non_overlapping_sides_count) 
+
+        else:
+            queue_p2.append(child_pos)
+
+
+    return queue_p1, queue_p2
+
+
+
 
 def calc_non_overlap_sides(grid : List[List[Node]], queue_p1 : list, queue_p2 : list,):
     while True:
         new_queue_p1 = []
+        
         while len(queue_p1) != 0:
             current_pos : Position = queue_p1.pop(0)
+            if grid[current_pos.y][current_pos.x].non_overlapping_sides_count == None:
+                grid[current_pos.y][current_pos.x].non_overlapping_sides_count = len(grid[current_pos.y][current_pos.x].sides)
 
             # search top side
             child_pos : Position = search_grid(grid, direction='top', current_pos=current_pos)
-            # updating the non overlapping side count for neighbour/child node
-            update_side_count(grid, parent=current_pos, child=child_pos)
             # updating the queue for making next level for traversal
-            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+            new_queue_p1, queue_p2 = update_queue_for_sides(grid, current_pos, new_queue_p1, queue_p2, child_pos)
 
             # search right side
             child_pos : Position = search_grid(grid, direction='right', current_pos=current_pos)
-            # updating the non overlapping side count for neighbour/child node
-            update_side_count(grid, parent=current_pos, child=child_pos)
             # updating the queue for making next level for traversal
-            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+            new_queue_p1, queue_p2 = update_queue_for_sides(grid, current_pos, new_queue_p1, queue_p2, child_pos)
 
             # search bottom side
             child_pos : Position = search_grid(grid, direction='bottom', current_pos=current_pos)
-            # updating the non overlapping side count for neighbour/child node
-            update_side_count(grid, parent=current_pos, child=child_pos)
             # updating the queue for making next level for traversal
-            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+            new_queue_p1, queue_p2 = update_queue_for_sides(grid, current_pos, new_queue_p1, queue_p2, child_pos)
 
             # search left side
             child_pos : Position = search_grid(grid, direction='left', current_pos=current_pos)
-            # updating the non overlapping side count for neighbour/child node
-            update_side_count(grid, parent=current_pos, child=child_pos)
             # updating the queue for making next level for traversal
-            new_queue_p1, queue_p2 = update_queue_for_area(grid, current_pos, new_queue_p1, queue_p2, child_pos)
+            new_queue_p1, queue_p2 = update_queue_for_sides(grid, current_pos, new_queue_p1, queue_p2, child_pos)
 
         if len(new_queue_p1) == 0 and len(queue_p2) != 0:
             # keep popping nodes from queue_p2 until an uncolored node is found
             # whose region is still needs to be discovered
             current_pos : Position = queue_p2.pop(0)
-            while grid[current_pos.y][current_pos.x].region != None and len(queue_p2) != 0:
+            while grid[current_pos.y][current_pos.x].non_overlapping_sides_count != None and len(queue_p2) != 0:
                 current_pos : Position = queue_p2.pop(0)
             
             if len(queue_p2) !=0: new_queue_p1.append( current_pos )
@@ -353,14 +378,32 @@ def calc_non_overlap_sides(grid : List[List[Node]], queue_p1 : list, queue_p2 : 
 
     return grid
 
+
+def calc_price_partb(grid : List[List[Node]]):
+    regions = {}
+    price = 0
+    for y in range(len(grid)):
+        for x in range(len(grid[y])):
+            if grid[y][x].region not in regions:
+                regions[grid[y][x].region] = { "area" : 1, "sides" : grid[y][x].non_overlapping_sides_count}
+            else:
+                 regions[grid[y][x].region]["area"] += 1
+                 regions[grid[y][x].region]["sides"] += grid[y][x].non_overlapping_sides_count
+    
+    for region in regions:
+        price += regions[region]["area"] * regions[region]["sides"]
+
+    return price
+
 if __name__ == "__main__":
     content = read_file("input.txt")
     grid = processing(content)
     queue = [ Position(x=0,y=0) ]
     grid = calc_perimeter(grid, queue)
     grid = mark_region(grid, [ Position(x=0,y=0) ], [])
-    price = calc_price_parta(grid)
-    print("Part a:", price)
+    price_a = calc_price_parta(grid)
+    print("Part a:", price_a)
     grid = calc_sides(grid, [ Position(x=0,y=0) ])
     grid = calc_non_overlap_sides(grid, [ Position(x=0,y=0) ], [])
-    print(grid)
+    price_b = calc_price_partb(grid)
+    print("Part b:", price_b)
