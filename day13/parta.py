@@ -128,9 +128,29 @@ def calc_total_tokens(all_coeffs : List[List]):
             tokens += 3*coeffs[0][0] + coeffs[0][1]
     return tokens
 
+
+def correcting_all_coeffs(claws : List[Claw], all_coeffs : List):
+    corrected_all_coeffs = []
+    for idx in range(len(claws)):
+        alpha = all_coeffs[idx][0][0]
+        beta = all_coeffs[idx][0][1]
+        rem_x = 10000000000000 - alpha*claws[idx].button_a.x - beta*claws[idx].button_b.x
+        rem_y = 10000000000000 - alpha*claws[idx].button_a.y - beta*claws[idx].button_b.y
+        if rem_x == 0 and rem_y == 0:
+            corrected_all_coeffs
+
 if __name__ == "__main__":
     content = read_file("input.txt")
     claws = processing(content)
     all_coeffs = estimate_claws(claws)
     total_tokens = calc_total_tokens(all_coeffs)
     print("Part a:",total_tokens)
+
+    all_coeffs = estimate_claws([
+                                Claw(button_a=Button(x=26,y=66),
+                                     button_b=Button(x=67,y=21),
+                                     prize=Position(x=5048, y=2896),
+                                     curr_pos=None
+                                     )
+                                 ])
+    print(all_coeffs)
