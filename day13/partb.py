@@ -65,50 +65,10 @@ def processing(content : str):
     return claw_list
 
 
-def validate_coeffs(claw : Claw, alpha_list : list, beta_list : list):
-    coeffs = []
-    for i in range(len(alpha_list)):
-        alpha = alpha_list[i]
-        beta = beta_list[i]
-        rem_x = claw.prize.x - alpha*claw.button_a.x - beta*claw.button_b.x
-        rem_y = claw.prize.y - alpha*claw.button_a.y - beta*claw.button_b.y
-        if rem_x == 0 and rem_y == 0:
-            coeffs.append( (alpha , beta) )
-
-    return coeffs
-
 def estimate_coeffs(claw : Claw):
-    alpha_list = []
-    beta_list = []
-    
-    if claw.button_a.x > claw.button_b.x:
-        
-        alpha = claw.prize.x // claw.button_a.x
-        while alpha != 0:
-            rem = (claw.prize.x  - alpha*claw.button_a.x ) % claw.button_b.x
-            if rem == 0:
-                beta = (claw.prize.x  - alpha*claw.button_a.x ) // claw.button_b.x
-                alpha_list.append(alpha)
-                beta_list.append(beta)
-
-            alpha -= 1
-
-        coeffs = validate_coeffs(claw, alpha_list, beta_list)
-
-    else:
-        
-        beta = claw.prize.x // claw.button_b.x
-        while beta != 0:
-            rem = (claw.prize.x  - beta*claw.button_b.x ) % claw.button_a.x
-            if rem == 0:
-                alpha = (claw.prize.x  - beta*claw.button_b.x ) // claw.button_a.x
-                alpha_list.append(alpha)
-                beta_list.append(beta)
-
-            beta -= 1
-
-        coeffs = validate_coeffs(claw, alpha_list, beta_list)
-
+    x1 = (claw.button_a.x * claw.prize.y - claw.button_a.y * claw.prize.x) / (claw.button_a.x * claw.button_b.y - claw.button_a.y * claw.button_b.x)
+    x2 = (claw.prize.x - claw.button_b.x * x1) / claw.button_a.x 
+    coeffs = (x1, x2) 
     return coeffs
 
 
@@ -116,7 +76,8 @@ def estimate_claws(claws : List[Claw]):
     all_coeffs = []
     for claw in claws:
         coeffs = estimate_coeffs(claw)
-        all_coeffs.append(coeffs)
+        if coeffs[0] == int(coeffs[0]) and coeffs[1] == int(coeffs[1]):
+            all_coeffs.append(coeffs)
 
     return all_coeffs
 
@@ -125,12 +86,14 @@ def calc_total_tokens(all_coeffs : List[List]):
     tokens = 0
     for coeffs in all_coeffs:
         if len(coeffs) != 0:
-            tokens += 3*coeffs[0][0] + coeffs[0][1]
+            tokens += 3*coeffs[0] + coeffs[1]
+    tokens = int(tokens)
     return tokens
 
 if __name__ == "__main__":
     content = read_file("input.txt")
     claws = processing(content)
     all_coeffs = estimate_claws(claws)
+    # print(all_coeffs)
     total_tokens = calc_total_tokens(all_coeffs)
-    print("Part a:",total_tokens)
+    print("Part b:",total_tokens)
