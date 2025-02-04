@@ -66,8 +66,21 @@ def processing(content : str):
 
 
 def estimate_coeffs(claw : Claw):
-    x1 = (claw.button_a.x * claw.prize.y - claw.button_a.y * claw.prize.x) / (claw.button_a.x * claw.button_b.y - claw.button_a.y * claw.button_b.x)
-    x2 = (claw.prize.x - claw.button_b.x * x1) / claw.button_a.x 
+    """
+    
+    x: a1 * x1 + b1 * x2 = c1
+    y: a2 * x1 + b2 * x2 = c2
+
+    Solving these two simultaeneous equations yeilds solutions:
+
+        x2 = ( a1*c2 - a2*c1 ) / ( a1*b2 - a2*b1 )
+        x1 = (c1 - b1*x2) / a1
+
+    """
+
+
+    x2 = (claw.button_a.x * claw.prize.y - claw.button_a.y * claw.prize.x) / (claw.button_a.x * claw.button_b.y - claw.button_a.y * claw.button_b.x)
+    x1 = (claw.prize.x - claw.button_b.x * x2) / claw.button_a.x 
     coeffs = (x1, x2) 
     return coeffs
 
@@ -94,6 +107,5 @@ if __name__ == "__main__":
     content = read_file("input.txt")
     claws = processing(content)
     all_coeffs = estimate_claws(claws)
-    # print(all_coeffs)
     total_tokens = calc_total_tokens(all_coeffs)
     print("Part b:",total_tokens)
