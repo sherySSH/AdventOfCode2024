@@ -27,6 +27,31 @@ def processing(content : str):
     lines = content.splitlines()
     return lines
 
+
+def create_grid(grid_x : int, grid_y : int) -> List[List[str]]:
+    grid = []
+    for y in range(grid_y):
+        line = []
+        for x in range(grid_x):
+            line.append(".")
+        grid.append(line)
+
+    return grid
+
+def output_grid(filepath : str, grid : List[List[str]]):    
+    folder_path =  os.path.sep.join(os.path.split(filepath)[0:-1])
+
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path, mode=777, exist_ok=True)
+
+    with open(filepath, 'w') as f:
+        for y in range(len(grid)):
+            for x in range(len(grid[y])):
+                f.write(grid[y][x])
+            f.write("\n")
+        f.close()
+    
+
 def create_robot(config : str):
     config_re = re.compile("-?[0-9]+")
     config : List[str] = config_re.findall(config)
@@ -45,9 +70,14 @@ def create_robots(configs : List[str]) -> List[Robot]:
     
     return robots
 
+def insert_robots_into_grid(grid : List[List[str]] , robots : List[Robot]):
+    for robot in robots:
+        grid[robot.pos.y][robot.pos.x] = "*"
+    return grid
 
 def estimate_positions(robots : List[Robot], grid_x = 101, grid_y = 103, seconds=100):
-    for _ in range(seconds):
+    for second in range(seconds):
+        grid = create_grid(grid_x=101, grid_y=103)
         for robot in robots:
             robot.pos.x += robot.vel.x
             robot.pos.y += robot.vel.y
@@ -63,6 +93,9 @@ def estimate_positions(robots : List[Robot], grid_x = 101, grid_y = 103, seconds
                 robot.pos.y = robot.pos.y + grid_y
             elif robot.pos.y >= grid_y:
                 robot.pos.y = robot.pos.y - grid_y
+
+        grid = insert_robots_into_grid(grid, robots)
+        output_grid(os.path.join("snapshots",f"{second}.txt") , grid)
 
     return robots
 
@@ -94,3 +127,6 @@ if __name__ == "__main__":
     robots = estimate_positions(robots)
     safety_factor = estimate_safety_factor(robots)
     print("Part a:", safety_factor)
+
+    
+    
