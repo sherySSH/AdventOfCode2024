@@ -47,8 +47,8 @@ def create_robots(configs : List[str]) -> List[Robot]:
 
 
 def estimate_positions(robots : List[Robot], grid_x = 101, grid_y = 103, seconds=100):
-    for robot in robots:
-        for _ in range(seconds):
+    for _ in range(seconds):
+        for robot in robots:
             robot.pos.x += robot.vel.x
             robot.pos.y += robot.vel.y
             
